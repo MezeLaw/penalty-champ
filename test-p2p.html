@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test P2P - Penalty Champion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-btn {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            min-height: 50px;
+        }
+        .success { background: rgba(46, 204, 113, 0.3); }
+        .error { background: rgba(231, 76, 60, 0.3); }
+        .warning { background: rgba(243, 156, 18, 0.3); }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        input[type="text"] {
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 25px;
+            margin: 10px;
+            width: 200px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test P2P Connection</h1>
+        <p>Prueba las conexiones peer-to-peer</p>
+        
+        <div id="status" class="status">
+            Presiona "Inicializar P2P" para comenzar
+        </div>
+        
+        <button class="test-btn" onclick="initP2P()">Inicializar P2P</button>
+        <button class="test-btn" onclick="createRoom()">Crear Sala</button>
+        <br>
+        <input type="text" id="peerIdInput" placeholder="ID del peer" maxlength="20">
+        <button class="test-btn" onclick="connectToPeer()">Conectar</button>
+        
+        <div id="myPeerId" style="margin: 20px 0; font-weight: bold;"></div>
+        
+        <div id="log" class="log"></div>
+        
+        <button class="test-btn" onclick="clearLog()">Limpiar Log</button>
+        <button class="test-btn" onclick="location.href='index.html'">Juego Principal</button>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script>
+        let peer = null;
+        let connection = null;
+        let serverIndex = 0;
+        
+        const servers = [
+            {
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                },
+                debug: 1
+            },
+            {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                },
+                debug: 1
+            }
+        ];
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            log(`STATUS: ${message}`);
+        }
+        
+        function initP2P() {
+            if (peer && !peer.destroyed) {
+                peer.destroy();
+            }
+            
+            updateStatus('Inicializando P2P...', 'warning');
+            
+            const config = servers[serverIndex];
+            log(`Usando servidor ${serverIndex + 1}: ${config.host || 'público'}`);
+            
+            peer = new Peer(config);
+            
+            const initTimeout = setTimeout(() => {
+                if (!peer.open) {
+                    log(`Servidor ${serverIndex + 1} falló, probando siguiente...`);
+                    serverIndex = (serverIndex + 1) % servers.length;
+                    initP2P();
+                }
+            }, 8000);
+            
+            peer.on('open', (id) => {
+                clearTimeout(initTimeout);
+                updateStatus('P2P Inicializado correctamente', 'success');
+                document.getElementById('myPeerId').textContent = `Tu ID: ${id}`;
+                log(`Peer abierto con ID: ${id}`);
+            });
+            
+            peer.on('connection', (conn) => {
+                log(`Conexión entrante de: ${conn.peer}`);
+                handleConnection(conn);
+            });
+            
+            peer.on('error', (err) => {
+                clearTimeout(initTimeout);
+                updateStatus(`Error P2P: ${err.message}`, 'error');
+                log(`ERROR: ${err.type} - ${err.message}`);
+                
+                if (err.type === 'server-error' || err.type === 'network') {
+                    serverIndex = (serverIndex + 1) % servers.length;
+                    setTimeout(() => initP2P(), 2000);
+                }
+            });
+            
+            peer.on('disconnected', () => {
+                updateStatus('Desconectado del servidor', 'warning');
+                log('Peer desconectado');
+            });
+        }
+        
+        function createRoom() {
+            if (!peer || !peer.open) {
+                updateStatus('Primero inicializa P2P', 'error');
+                return;
+            }
+            
+            const roomId = generateRoomId();
+            updateStatus(`Sala creada: ${roomId}`, 'success');
+            document.getElementById('myPeerId').textContent = `Tu ID: ${peer.id} | Sala: ${roomId}`;
+            log(`Sala creada con ID: ${roomId}`);
+        }
+        
+        function connectToPeer() {
+            const peerId = document.getElementById('peerIdInput').value.trim();
+            
+            if (!peer || !peer.open) {
+                updateStatus('Primero inicializa P2P', 'error');
+                return;
+            }
+            
+            if (!peerId) {
+                updateStatus('Ingresa un ID de peer', 'error');
+                return;
+            }
+            
+            updateStatus('Conectando...', 'warning');
+            log(`Intentando conectar con: ${peerId}`);
+            
+            const conn = peer.connect(peerId, {
+                reliable: true,
+                serialization: 'json'
+            });
+            
+            const timeout = setTimeout(() => {
+                updateStatus('Timeout de conexión', 'error');
+                log('Timeout al conectar');
+                conn.close();
+            }, 10000);
+            
+            conn.on('open', () => {
+                clearTimeout(timeout);
+                updateStatus('¡Conectado!', 'success');
+                log(`Conectado exitosamente con: ${peerId}`);
+                handleConnection(conn);
+            });
+            
+            conn.on('error', (err) => {
+                clearTimeout(timeout);
+                updateStatus(`Error de conexión: ${err.message}`, 'error');
+                log(`Error al conectar: ${err.message}`);
+            });
+        }
+        
+        function handleConnection(conn) {
+            connection = conn;
+            
+            conn.on('data', (data) => {
+                log(`Datos recibidos: ${JSON.stringify(data)}`);
+            });
+            
+            conn.on('close', () => {
+                log('Conexión cerrada');
+                connection = null;
+            });
+            
+            // Enviar mensaje de prueba
+            setTimeout(() => {
+                if (conn.open) {
+                    conn.send({ type: 'test', message: 'Hola desde ' + peer.id });
+                    log('Mensaje de prueba enviado');
+                }
+            }, 1000);
+        }
+        
+        function generateRoomId() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let id = '';
+            for (let i = 0; i < 6; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+    </script>
+</body>
+</html> 

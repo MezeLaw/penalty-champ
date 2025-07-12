@@ -4,12 +4,14 @@ Un juego de penales en tiempo real donde dos jugadores pueden enfrentarse a trav
 
 ## ✨ Características
 
-- **Conexiones P2P**: Juego directo entre dos jugadores sin necesidad de servidor
+- **Conexiones P2P Robustas**: Múltiples servidores de respaldo automático
 - **Tiempo real**: Sincronización instantánea entre jugadores
 - **Temporizador**: Máximo 5 segundos para elegir tu jugada
 - **Roles alternos**: Los jugadores cambian entre pateador y portero
 - **Interfaz intuitiva**: Diseño moderno y responsivo
 - **Animaciones**: Efectos visuales para goles y atajadas
+- **Manejo de errores**: Sistema robusto de reconexión y fallback
+- **Validación automática**: Códigos de partida validados en tiempo real
 
 ## 🎮 Cómo jugar
 
@@ -106,7 +108,20 @@ Este es el error más común. **Soluciones rápidas:**
 - **Servidor local**: `python -m http.server 8000`
 - **Modo incógnito**: Elimina conflictos de extensiones
 
-### 📞 Más ayuda
+### 🧪 Herramientas de Testing
+
+### Archivos de prueba incluidos:
+- **`test-p2p.html`**: Prueba específica de conexiones P2P con logs detallados
+- **`demo-local.html`**: Demo offline vs IA (siempre funciona)
+- **`test-local.html`**: Verifica compatibilidad del navegador
+
+### Cómo usar el test P2P:
+1. Abre `test-p2p.html` en GitHub Pages
+2. Haz clic en "Inicializar P2P"
+3. Si funciona: el juego principal funcionará
+4. Si falla: revisa los logs para identificar el problema
+
+## 📞 Más ayuda
 Ver [INSTRUCTIONS.md](INSTRUCTIONS.md) para troubleshooting detallado
 
 ## 🤝 Contribuciones

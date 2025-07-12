@@ -85,6 +85,24 @@ class PenaltyGame {
                 this.joinGame();
             }
         });
+        
+        // Convertir a mayúsculas automáticamente
+        this.gameCodeInput.addEventListener('input', (e) => {
+            const value = e.target.value.toUpperCase();
+            e.target.value = value;
+            
+            // Validar en tiempo real
+            if (value.length === 6) {
+                const allowedChars = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]+$/;
+                if (allowedChars.test(value)) {
+                    e.target.style.borderColor = '#4CAF50';
+                } else {
+                    e.target.style.borderColor = '#f44336';
+                }
+            } else {
+                e.target.style.borderColor = '';
+            }
+        });
 
         // Botones de acción del juego
         this.actionButtons.forEach(button => {
@@ -98,25 +116,69 @@ class PenaltyGame {
     }
 
     initializeP2P() {
-        // Configuración mejorada para PeerJS con servidores STUN
-        const peerConfig = {
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' }
-                ]
+        // Lista de servidores PeerJS para fallback
+        this.peerServers = [
+            // Servidor público principal
+            { 
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ]
+                },
+                debug: 1
             },
-            debug: 2 // Activar logs para debugging
-        };
+            // Servidor alternativo con más STUN servers
+            {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' },
+                        { urls: 'stun:stun.services.mozilla.com' }
+                    ]
+                },
+                debug: 1
+            }
+        ];
 
-        // Inicializar PeerJS con configuración mejorada (usando servidor público)
-        this.peer = new Peer(peerConfig);
+        this.currentServerIndex = 0;
+        this.connectWithServer(this.currentServerIndex);
+    }
+
+    connectWithServer(serverIndex) {
+        if (serverIndex >= this.peerServers.length) {
+            this.showConnectionStatus('Todos los servidores fallaron', 'error');
+            return;
+        }
+
+        const config = this.peerServers[serverIndex];
+        console.log(`Intentando conectar con servidor ${serverIndex + 1}...`);
         
+        // Limpiar peer anterior si existe
+        if (this.peer && !this.peer.destroyed) {
+            this.peer.destroy();
+        }
+        
+        // Crear nuevo peer con configuración del servidor
+        this.peer = new Peer(config);
+        
+        // Timeout para inicialización del peer
+        const initTimeout = setTimeout(() => {
+            if (!this.peer.open) {
+                console.log(`Servidor ${serverIndex + 1} falló, probando siguiente...`);
+                this.tryNextServer();
+            }
+        }, 8000); // 8 segundos timeout
+
         this.peer.on('open', (id) => {
-            console.log('Peer ID:', id);
+            clearTimeout(initTimeout);
+            console.log(`Conectado al servidor ${serverIndex + 1}, Peer ID:`, id);
             this.showConnectionStatus('Listo para conectar', 'success');
         });
 
@@ -125,8 +187,16 @@ class PenaltyGame {
         });
 
         this.peer.on('error', (err) => {
+            clearTimeout(initTimeout);
             console.error('Peer error:', err);
-            this.handleConnectionError(err);
+            
+            // Si es error de servidor, probar el siguiente
+            if (err.type === 'server-error' || err.type === 'network' || err.type === 'socket-error') {
+                console.log(`Error de servidor ${serverIndex + 1}, probando siguiente...`);
+                this.tryNextServer();
+            } else {
+                this.handleConnectionError(err);
+            }
         });
 
         this.peer.on('disconnected', () => {
@@ -138,6 +208,69 @@ class PenaltyGame {
                 }
             }, 1000);
         });
+    }
+
+    tryNextServer() {
+        this.currentServerIndex++;
+        if (this.currentServerIndex < this.peerServers.length) {
+            this.showConnectionStatus(`Probando servidor ${this.currentServerIndex + 1}...`, 'warning');
+            setTimeout(() => {
+                this.connectWithServer(this.currentServerIndex);
+            }, 1000);
+        } else {
+            this.showConnectionStatus('Error: Todos los servidores P2P fallaron', 'error');
+            this.showFallbackOptions();
+        }
+    }
+
+    showFallbackOptions() {
+        const fallbackDiv = document.createElement('div');
+        fallbackDiv.id = 'fallbackOptions';
+        fallbackDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 2000;
+            max-width: 400px;
+        `;
+        
+        fallbackDiv.innerHTML = `
+            <h3>🚫 Conexión P2P No Disponible</h3>
+            <p>No se pudo establecer conexión P2P. Opciones:</p>
+            <div style="margin: 20px 0;">
+                <button onclick="location.href='demo-local.html'" style="
+                    background: #ff6b6b; 
+                    color: white; 
+                    border: none; 
+                    padding: 10px 20px; 
+                    border-radius: 5px; 
+                    margin: 5px;
+                    cursor: pointer;">
+                    🎮 Demo vs IA
+                </button>
+                <button onclick="location.reload()" style="
+                    background: #74b9ff; 
+                    color: white; 
+                    border: none; 
+                    padding: 10px 20px; 
+                    border-radius: 5px; 
+                    margin: 5px;
+                    cursor: pointer;">
+                    🔄 Reintentar
+                </button>
+            </div>
+            <p style="font-size: 0.9em; opacity: 0.8;">
+                Las conexiones P2P pueden fallar por firewalls o NAT.
+            </p>
+        `;
+        
+        document.body.appendChild(fallbackDiv);
     }
 
     // Funciones de conexión
@@ -159,30 +292,66 @@ class PenaltyGame {
 
     joinGame() {
         const code = this.gameCodeInput.value.trim().toUpperCase();
-        if (!code) return;
+        
+        // Validaciones mejoradas
+        if (!code) {
+            this.showConnectionStatus('Ingresa un código de partida', 'error');
+            return;
+        }
+        
+        if (code.length !== 6) {
+            this.showConnectionStatus('El código debe tener 6 caracteres', 'error');
+            return;
+        }
+        
+        // Validar que solo contenga caracteres permitidos
+        const allowedChars = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]+$/;
+        if (!allowedChars.test(code)) {
+            this.showConnectionStatus('Código inválido. Solo letras y números', 'error');
+            return;
+        }
 
         this.gameState.isHost = false;
         this.gameState.playerRole = 'goalkeeper';
         this.gameState.gameCode = code;
         
+        // Limpiar input
+        this.gameCodeInput.value = '';
+        
         this.connectToPeer(code);
     }
 
     connectToPeer(peerId) {
+        if (!this.peer || !this.peer.open) {
+            this.showConnectionStatus('Error: No hay conexión al servidor P2P', 'error');
+            return;
+        }
+
+        // Validar formato del código
+        if (!peerId || peerId.length !== 6) {
+            this.showConnectionStatus('Error: Código de partida inválido', 'error');
+            return;
+        }
+
         this.showConnectionStatus('Conectando...', 'warning');
         
         const conn = this.peer.connect(peerId, {
             reliable: true,
-            serialization: 'json'
+            serialization: 'json',
+            metadata: { 
+                gameType: 'penalty-champion',
+                timestamp: Date.now()
+            }
         });
         
-        // Timeout para conexión
+        // Timeout para conexión más corto
         const connectionTimeout = setTimeout(() => {
             if (!this.isConnected) {
-                this.showConnectionStatus('Timeout de conexión', 'error');
+                this.showConnectionStatus('Timeout: El jugador no responde', 'error');
                 conn.close();
+                this.showConnectionRetry();
             }
-        }, 10000); // 10 segundos timeout
+        }, 8000); // 8 segundos timeout
         
         conn.on('open', () => {
             clearTimeout(connectionTimeout);
@@ -194,11 +363,67 @@ class PenaltyGame {
         conn.on('error', (err) => {
             clearTimeout(connectionTimeout);
             console.error('Connection error:', err);
-            this.showConnectionStatus('Error de conexión', 'error');
-            setTimeout(() => {
-                alert('No se pudo conectar. Intenta con un código diferente o verifica tu conexión.');
-            }, 500);
+            
+            let errorMessage = 'Error de conexión';
+            if (err.message && err.message.includes('Could not connect to peer')) {
+                errorMessage = 'El código no existe o el jugador no está disponible';
+            }
+            
+            this.showConnectionStatus(errorMessage, 'error');
+            this.showConnectionRetry();
         });
+    }
+
+    showConnectionRetry() {
+        setTimeout(() => {
+            const retryDiv = document.createElement('div');
+            retryDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+                z-index: 1500;
+            `;
+            
+            retryDiv.innerHTML = `
+                <h3>❌ No se pudo conectar</h3>
+                <p>Posibles causas:</p>
+                <ul style="text-align: left; margin: 10px 0;">
+                    <li>• Código incorrecto</li>
+                    <li>• El jugador no está disponible</li>
+                    <li>• Problemas de red/firewall</li>
+                </ul>
+                <div style="margin-top: 15px;">
+                    <button onclick="this.parentElement.remove()" style="
+                        background: #74b9ff; 
+                        color: white; 
+                        border: none; 
+                        padding: 8px 16px; 
+                        border-radius: 5px; 
+                        margin: 5px;
+                        cursor: pointer;">
+                        Intentar Otro Código
+                    </button>
+                    <button onclick="location.href='demo-local.html'" style="
+                        background: #ff6b6b; 
+                        color: white; 
+                        border: none; 
+                        padding: 8px 16px; 
+                        border-radius: 5px; 
+                        margin: 5px;
+                        cursor: pointer;">
+                        Demo vs IA
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(retryDiv);
+        }, 1000);
     }
 
     handleIncomingConnection(conn) {
@@ -489,6 +714,12 @@ class PenaltyGame {
             retryBtn.style.display = 'none';
         }
         
+        // Limpiar cualquier diálogo de fallback
+        const fallbackDiv = document.getElementById('fallbackOptions');
+        if (fallbackDiv) {
+            fallbackDiv.remove();
+        }
+        
         // Limpiar conexión anterior
         if (this.peer && !this.peer.destroyed) {
             this.peer.destroy();
@@ -496,10 +727,11 @@ class PenaltyGame {
         
         this.showConnectionStatus('Reiniciando conexión...', 'warning');
         
-        // Reinicializar P2P
+        // Reinicializar P2P con reset del índice de servidor
         setTimeout(() => {
             this.isConnected = false;
             this.connection = null;
+            this.currentServerIndex = 0; // Reset para probar desde el primer servidor
             this.initializeP2P();
             
             // Si estaba esperando, generar nuevo código
@@ -508,7 +740,7 @@ class PenaltyGame {
                     this.gameState.gameCode = this.generateGameCode();
                     this.gameElements.gameCode.textContent = this.gameState.gameCode;
                     this.showConnectionStatus('Nuevo código generado', 'success');
-                }, 1000);
+                }, 2000);
             }
         }, 1000);
     }
