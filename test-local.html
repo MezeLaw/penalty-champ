@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Penalty Champion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .success { background: rgba(46, 204, 113, 0.3); }
+        .error { background: rgba(231, 76, 60, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test - Penalty Champion</h1>
+        <p>Verifica que el juego funciona correctamente</p>
+        
+        <div id="status" class="status">
+            Presiona el botón para comenzar las pruebas
+        </div>
+        
+        <button class="test-button" onclick="runTests()">Ejecutar Pruebas</button>
+        <button class="test-button" onclick="openGame()">Abrir Juego</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function runTests() {
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            status.innerHTML = 'Ejecutando pruebas...';
+            status.className = 'status';
+            results.innerHTML = '';
+            
+            const tests = [
+                {
+                    name: 'Verificar PeerJS',
+                    test: () => typeof Peer !== 'undefined'
+                },
+                {
+                    name: 'Verificar WebRTC',
+                    test: () => typeof RTCPeerConnection !== 'undefined'
+                },
+                {
+                    name: 'Verificar API moderna',
+                    test: () => typeof Promise !== 'undefined'
+                },
+                {
+                    name: 'Verificar localStorage',
+                    test: () => typeof localStorage !== 'undefined'
+                }
+            ];
+            
+            let passed = 0;
+            let total = tests.length;
+            
+            tests.forEach(test => {
+                const result = test.test();
+                const resultDiv = document.createElement('div');
+                resultDiv.className = result ? 'status success' : 'status error';
+                resultDiv.innerHTML = `${test.name}: ${result ? '✅ PASS' : '❌ FAIL'}`;
+                results.appendChild(resultDiv);
+                
+                if (result) passed++;
+            });
+            
+            setTimeout(() => {
+                if (passed === total) {
+                    status.innerHTML = '🎉 ¡Todas las pruebas pasaron! El juego está listo para usar.';
+                    status.className = 'status success';
+                } else {
+                    status.innerHTML = `⚠️ ${passed}/${total} pruebas pasaron. Puede que necesites un navegador más moderno.`;
+                    status.className = 'status error';
+                }
+            }, 1000);
+        }
+        
+        function openGame() {
+            window.open('index.html', '_blank');
+        }
+        
+        // Cargar PeerJS para las pruebas
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js';
+        document.head.appendChild(script);
+    </script>
+</body>
+</html> 

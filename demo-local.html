@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Champion - Demo Local</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #feca57;
+        }
+
+        .timer {
+            background: rgba(255, 107, 107, 0.8);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .field {
+            background: linear-gradient(to bottom, #48c9b0 0%, #58d68d 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .goal {
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid white;
+            border-radius: 15px;
+            height: 150px;
+            position: relative;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .goalkeeper {
+            width: 40px;
+            height: 60px;
+            background: #ff6b6b;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease;
+        }
+
+        .goalkeeper.left { left: 20%; }
+        .goalkeeper.center { left: 50%; transform: translateX(-50%); }
+        .goalkeeper.right { left: 80%; }
+
+        .ball {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .ball.left { left: 20%; }
+        .ball.center { left: 50%; transform: translateX(-50%); }
+        .ball.right { left: 80%; }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .action-btn {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            border: none;
+            padding: 20px 30px;
+            font-size: 1.2em;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn.selected {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            transform: scale(1.1);
+        }
+
+        .choice-display {
+            margin: 20px 0;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #feca57;
+            min-height: 30px;
+        }
+
+        .final-score {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 40px 0;
+        }
+
+        .player-result span, .opponent-result span {
+            font-size: 4em;
+            font-weight: bold;
+            color: #feca57;
+            display: block;
+        }
+
+        .vs {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        .winner-message {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 30px 0;
+            padding: 20px;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            color: #333;
+        }
+
+        .demo-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #feca57;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .action-btn {
+                margin: 5px 0;
+                width: 200px;
+            }
+            
+            .game-header {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla de inicio -->
+        <div id="startScreen" class="screen active">
+            <h1>🥅 Penalty Champion</h1>
+            <div class="demo-info">
+                <h3>🎮 DEMO LOCAL</h3>
+                <p>Esta versión simula el juego P2P para pruebas rápidas.<br>
+                La IA actuará como tu oponente.</p>
+            </div>
+            <button id="startDemoBtn" class="btn-primary">Iniciar Demo</button>
+        </div>
+
+        <!-- Pantalla de juego -->
+        <div id="gameScreen" class="screen">
+            <div class="game-header">
+                <div class="player-info">
+                    <h3 id="playerRole">Tu rol: Pateador</h3>
+                    <div class="score">
+                        <span id="playerScore">0</span> - <span id="opponentScore">0</span>
+                    </div>
+                </div>
+                <div class="timer">
+                    <span id="countdown">5</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="goal">
+                    <div class="goalkeeper" id="goalkeeper"></div>
+                    <div class="ball" id="ball"></div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <h3 id="actionTitle">Elige tu dirección:</h3>
+                <div class="action-buttons">
+                    <button class="action-btn" data-direction="left">⬅️ Izquierda</button>
+                    <button class="action-btn" data-direction="center">⬆️ Centro</button>
+                    <button class="action-btn" data-direction="right">➡️ Derecha</button>
+                </div>
+                <div id="choiceDisplay" class="choice-display"></div>
+            </div>
+
+            <div class="round-info">
+                <p>Ronda <span id="currentRound">1</span> de 5</p>
+                <p id="roundResult"></p>
+            </div>
+        </div>
+
+        <!-- Pantalla de resultados -->
+        <div id="resultScreen" class="screen">
+            <h2>🏆 Resultado Final</h2>
+            <div class="final-score">
+                <div class="player-result">
+                    <h3>Tú</h3>
+                    <span id="finalPlayerScore">0</span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="opponent-result">
+                    <h3>IA</h3>
+                    <span id="finalOpponentScore">0</span>
+                </div>
+            </div>
+            <div id="winnerMessage" class="winner-message"></div>
+            <button id="playAgainBtn" class="btn-primary">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        class PenaltyDemo {
+            constructor() {
+                this.gameState = {
+                    currentScreen: 'start',
+                    playerRole: 'kicker',
+                    currentRound: 1,
+                    maxRounds: 5,
+                    playerScore: 0,
+                    opponentScore: 0,
+                    playerChoice: null,
+                    opponentChoice: null,
+                    isChoiceMade: false,
+                    timeLeft: 5,
+                    timer: null,
+                    roundInProgress: false
+                };
+
+                this.initializeElements();
+                this.setupEventListeners();
+            }
+
+            initializeElements() {
+                this.screens = {
+                    start: document.getElementById('startScreen'),
+                    game: document.getElementById('gameScreen'),
+                    result: document.getElementById('resultScreen')
+                };
+
+                this.buttons = {
+                    startDemo: document.getElementById('startDemoBtn'),
+                    playAgain: document.getElementById('playAgainBtn')
+                };
+
+                this.gameElements = {
+                    playerRole: document.getElementById('playerRole'),
+                    playerScore: document.getElementById('playerScore'),
+                    opponentScore: document.getElementById('opponentScore'),
+                    countdown: document.getElementById('countdown'),
+                    currentRound: document.getElementById('currentRound'),
+                    roundResult: document.getElementById('roundResult'),
+                    actionTitle: document.getElementById('actionTitle'),
+                    choiceDisplay: document.getElementById('choiceDisplay'),
+                    goalkeeper: document.getElementById('goalkeeper'),
+                    ball: document.getElementById('ball'),
+                    finalPlayerScore: document.getElementById('finalPlayerScore'),
+                    finalOpponentScore: document.getElementById('finalOpponentScore'),
+                    winnerMessage: document.getElementById('winnerMessage')
+                };
+
+                this.actionButtons = document.querySelectorAll('.action-btn');
+            }
+
+            setupEventListeners() {
+                this.buttons.startDemo.addEventListener('click', () => this.startGame());
+                this.buttons.playAgain.addEventListener('click', () => this.resetGame());
+
+                this.actionButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        if (!this.gameState.roundInProgress || this.gameState.isChoiceMade) return;
+                        
+                        const direction = button.dataset.direction;
+                        this.makeChoice(direction);
+                    });
+                });
+            }
+
+            startGame() {
+                this.showScreen('game');
+                this.updateGameDisplay();
+                this.startRound();
+            }
+
+            startRound() {
+                this.gameState.roundInProgress = true;
+                this.gameState.isChoiceMade = false;
+                this.gameState.playerChoice = null;
+                this.gameState.opponentChoice = null;
+                this.gameState.timeLeft = 5;
+
+                this.updateRoundDisplay();
+                this.resetVisualElements();
+                this.startTimer();
+                
+                // IA hace su elección después de un tiempo aleatorio
+                setTimeout(() => {
+                    this.makeAIChoice();
+                }, Math.random() * 3000 + 1000);
+            }
+
+            startTimer() {
+                this.gameElements.countdown.textContent = this.gameState.timeLeft;
+                
+                this.gameState.timer = setInterval(() => {
+                    this.gameState.timeLeft--;
+                    this.gameElements.countdown.textContent = this.gameState.timeLeft;
+
+                    if (this.gameState.timeLeft <= 0) {
+                        this.handleTimeUp();
+                    }
+                }, 1000);
+            }
+
+            handleTimeUp() {
+                clearInterval(this.gameState.timer);
+                
+                if (!this.gameState.isChoiceMade) {
+                    this.makeChoice('center');
+                }
+            }
+
+            makeChoice(direction) {
+                if (this.gameState.isChoiceMade) return;
+
+                this.gameState.isChoiceMade = true;
+                this.gameState.playerChoice = direction;
+
+                this.actionButtons.forEach(btn => {
+                    btn.classList.remove('selected');
+                    if (btn.dataset.direction === direction) {
+                        btn.classList.add('selected');
+                    }
+                });
+
+                this.gameElements.choiceDisplay.textContent = `Tu elección: ${this.getDirectionText(direction)}`;
+
+                if (this.gameState.opponentChoice) {
+                    this.resolveRound();
+                }
+            }
+
+            makeAIChoice() {
+                const choices = ['left', 'center', 'right'];
+                this.gameState.opponentChoice = choices[Math.floor(Math.random() * choices.length)];
+                
+                if (this.gameState.isChoiceMade) {
+                    this.resolveRound();
+                }
+            }
+
+            resolveRound() {
+                clearInterval(this.gameState.timer);
+                
+                const playerChoice = this.gameState.playerChoice;
+                const opponentChoice = this.gameState.opponentChoice;
+                
+                let result;
+                
+                if (this.gameState.playerRole === 'kicker') {
+                    result = this.calculateKickResult(playerChoice, opponentChoice);
+                } else {
+                    result = this.calculateKickResult(opponentChoice, playerChoice);
+                }
+
+                this.animateResult(result);
+                this.updateScore(result);
+                this.displayRoundResult(result);
+
+                setTimeout(() => {
+                    this.gameState.currentRound++;
+                    
+                    if (this.gameState.currentRound > this.gameState.maxRounds) {
+                        this.endGame();
+                    } else {
+                        this.gameState.playerRole = this.gameState.playerRole === 'kicker' ? 'goalkeeper' : 'kicker';
+                        this.updateGameDisplay();
+                        this.startRound();
+                    }
+                }, 3000);
+            }
+
+            calculateKickResult(kickDirection, saveDirection) {
+                return kickDirection === saveDirection ? 'save' : 'goal';
+            }
+
+            animateResult(result) {
+                const goalkeeper = this.gameElements.goalkeeper;
+                const ball = this.gameElements.ball;
+
+                if (this.gameState.playerRole === 'goalkeeper') {
+                    goalkeeper.className = `goalkeeper ${this.gameState.playerChoice}`;
+                    ball.className = `ball ${this.gameState.opponentChoice}`;
+                } else {
+                    goalkeeper.className = `goalkeeper ${this.gameState.opponentChoice}`;
+                    ball.className = `ball ${this.gameState.playerChoice}`;
+                }
+            }
+
+            updateScore(result) {
+                if (result === 'goal') {
+                    if (this.gameState.playerRole === 'kicker') {
+                        this.gameState.playerScore++;
+                    } else {
+                        this.gameState.opponentScore++;
+                    }
+                } else {
+                    if (this.gameState.playerRole === 'goalkeeper') {
+                        this.gameState.playerScore++;
+                    } else {
+                        this.gameState.opponentScore++;
+                    }
+                }
+
+                this.gameElements.playerScore.textContent = this.gameState.playerScore;
+                this.gameElements.opponentScore.textContent = this.gameState.opponentScore;
+            }
+
+            displayRoundResult(result) {
+                let message;
+                
+                if (result === 'goal') {
+                    if (this.gameState.playerRole === 'kicker') {
+                        message = '⚽ ¡GOL! Anotaste';
+                    } else {
+                        message = '😞 La IA anotó un gol';
+                    }
+                } else {
+                    if (this.gameState.playerRole === 'goalkeeper') {
+                        message = '🙌 ¡ATAJASTE! Gran parada';
+                    } else {
+                        message = '😅 La IA atajó tu disparo';
+                    }
+                }
+
+                this.gameElements.roundResult.textContent = message;
+            }
+
+            endGame() {
+                this.showScreen('result');
+                
+                this.gameElements.finalPlayerScore.textContent = this.gameState.playerScore;
+                this.gameElements.finalOpponentScore.textContent = this.gameState.opponentScore;
+
+                let winnerMessage;
+                if (this.gameState.playerScore > this.gameState.opponentScore) {
+                    winnerMessage = '🎉 ¡GANASTE! Le ganaste a la IA';
+                } else if (this.gameState.playerScore < this.gameState.opponentScore) {
+                    winnerMessage = '😔 Perdiste contra la IA... ¡Inténtalo de nuevo!';
+                } else {
+                    winnerMessage = '🤝 ¡EMPATE! Igualaste con la IA';
+                }
+
+                this.gameElements.winnerMessage.textContent = winnerMessage;
+            }
+
+            updateGameDisplay() {
+                const roleText = this.gameState.playerRole === 'kicker' ? 'Pateador' : 'Portero';
+                this.gameElements.playerRole.textContent = `Tu rol: ${roleText}`;
+                
+                const actionText = this.gameState.playerRole === 'kicker' ? 
+                    'Elige dónde patear:' : 'Elige dónde atajar:';
+                this.gameElements.actionTitle.textContent = actionText;
+            }
+
+            updateRoundDisplay() {
+                this.gameElements.currentRound.textContent = this.gameState.currentRound;
+                this.gameElements.roundResult.textContent = '';
+                this.gameElements.choiceDisplay.textContent = '';
+            }
+
+            resetVisualElements() {
+                this.gameElements.goalkeeper.className = 'goalkeeper';
+                this.gameElements.ball.className = 'ball';
+                
+                this.actionButtons.forEach(btn => {
+                    btn.classList.remove('selected');
+                    btn.disabled = false;
+                });
+            }
+
+            showScreen(screenName) {
+                Object.values(this.screens).forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                
+                this.screens[screenName].classList.add('active');
+                this.gameState.currentScreen = screenName;
+            }
+
+            getDirectionText(direction) {
+                const directions = {
+                    'left': 'Izquierda',
+                    'center': 'Centro',
+                    'right': 'Derecha'
+                };
+                return directions[direction] || direction;
+            }
+
+            resetGame() {
+                if (this.gameState.timer) {
+                    clearInterval(this.gameState.timer);
+                }
+
+                this.gameState = {
+                    currentScreen: 'start',
+                    playerRole: 'kicker',
+                    currentRound: 1,
+                    maxRounds: 5,
+                    playerScore: 0,
+                    opponentScore: 0,
+                    playerChoice: null,
+                    opponentChoice: null,
+                    isChoiceMade: false,
+                    timeLeft: 5,
+                    timer: null,
+                    roundInProgress: false
+                };
+
+                this.showScreen('start');
+            }
+        }
+
+        // Inicializar demo
+        document.addEventListener('DOMContentLoaded', () => {
+            new PenaltyDemo();
+        });
+    </script>
+</body>
+</html> 

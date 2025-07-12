@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Champion - Duelo de Penales</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla de inicio -->
+        <div id="startScreen" class="screen active">
+            <h1>🥅 Penalty Champion</h1>
+            <p>¡Duelo de penales en tiempo real!</p>
+            <button id="createGameBtn" class="btn-primary">Crear Partida</button>
+            <button id="joinGameBtn" class="btn-secondary">Unirse a Partida</button>
+            <input type="text" id="gameCodeInput" placeholder="Código de partida" style="display: none;">
+        </div>
+
+        <!-- Pantalla de espera -->
+        <div id="waitingScreen" class="screen">
+            <h2>🎮 Esperando Jugador</h2>
+            <p>Código de partida: <span id="gameCode"></span></p>
+            <p>Comparte este código con tu oponente</p>
+            <div class="loading">⚽ Cargando...</div>
+        </div>
+
+        <!-- Pantalla de juego -->
+        <div id="gameScreen" class="screen">
+            <div class="game-header">
+                <div class="player-info">
+                    <h3 id="playerRole">Tu rol: Pateador</h3>
+                    <div class="score">
+                        <span id="playerScore">0</span> - <span id="opponentScore">0</span>
+                    </div>
+                </div>
+                <div class="timer">
+                    <span id="countdown">5</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="goal">
+                    <div class="goalkeeper" id="goalkeeper"></div>
+                    <div class="ball" id="ball"></div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <h3 id="actionTitle">Elige tu dirección:</h3>
+                <div class="action-buttons">
+                    <button class="action-btn" data-direction="left">⬅️ Izquierda</button>
+                    <button class="action-btn" data-direction="center">⬆️ Centro</button>
+                    <button class="action-btn" data-direction="right">➡️ Derecha</button>
+                </div>
+                <div id="choiceDisplay" class="choice-display"></div>
+            </div>
+
+            <div class="round-info">
+                <p>Ronda <span id="currentRound">1</span> de 5</p>
+                <p id="roundResult"></p>
+            </div>
+        </div>
+
+        <!-- Pantalla de resultados -->
+        <div id="resultScreen" class="screen">
+            <h2>🏆 Resultado Final</h2>
+            <div class="final-score">
+                <div class="player-result">
+                    <h3>Tú</h3>
+                    <span id="finalPlayerScore">0</span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="opponent-result">
+                    <h3>Oponente</h3>
+                    <span id="finalOpponentScore">0</span>
+                </div>
+            </div>
+            <div id="winnerMessage" class="winner-message"></div>
+            <button id="playAgainBtn" class="btn-primary">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html> 

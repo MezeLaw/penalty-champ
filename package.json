@@ -1,0 +1,31 @@
+{
+  "name": "penalty-champion",
+  "version": "1.0.0",
+  "description": "Juego de penales P2P en tiempo real",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8000 -c-1",
+    "dev": "http-server -p 8000 -c-1 -o"
+  },
+  "keywords": [
+    "juego",
+    "penales",
+    "p2p",
+    "webrtc",
+    "futbol",
+    "tiempo-real"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "tu-repositorio-aqui"
+  },
+  "homepage": ".",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
