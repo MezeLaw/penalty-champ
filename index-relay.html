@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Champion - Versión Híbrida</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .version-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+        .connection-type {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .p2p { background: #27ae60; }
+        .relay { background: #f39c12; }
+        .none { background: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla de inicio -->
+        <div id="startScreen" class="screen active">
+            <h1>🥅 Penalty Champion</h1>
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #3498db;">
+                <h3>🔄 Versión Híbrida P2P + Relay</h3>
+                <p>Esta versión intenta P2P primero y usa servidor relay como respaldo.<br>
+                <strong>¡Garantiza que siempre funcione!</strong></p>
+            </div>
+            <p>¡Duelo de penales en tiempo real!</p>
+            <button id="createGameBtn" class="btn-primary">Crear Partida</button>
+            <button id="joinGameBtn" class="btn-secondary">Unirse a Partida</button>
+            <input type="text" id="gameCodeInput" placeholder="Código de partida (6 caracteres)" maxlength="6" style="display: none;">
+        </div>
+
+        <!-- Pantalla de espera -->
+        <div id="waitingScreen" class="screen">
+            <h2>🎮 Esperando Jugador</h2>
+            <p>Código de partida: <span id="gameCode"></span></p>
+            <p>Comparte este código con tu oponente</p>
+            <div class="loading">⚽ Cargando...</div>
+            <div style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
+                <p>💡 <strong>Sistema Híbrido:</strong></p>
+                <p>• Primero intenta conexión P2P directa</p>
+                <p>• Si falla, usa servidor relay automáticamente</p>
+                <p>• ¡Siempre funciona sin importar tu red!</p>
+            </div>
+        </div>
+
+        <!-- Pantalla de juego -->
+        <div id="gameScreen" class="screen">
+            <div class="game-header">
+                <div class="player-info">
+                    <h3 id="playerRole">Tu rol: Pateador</h3>
+                    <div class="score">
+                        <span id="playerScore">0</span> - <span id="opponentScore">0</span>
+                    </div>
+                </div>
+                <div class="timer">
+                    <span id="countdown">5</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="goal">
+                    <div class="goalkeeper" id="goalkeeper"></div>
+                    <div class="ball" id="ball"></div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <h3 id="actionTitle">Elige tu dirección:</h3>
+                <div class="action-buttons">
+                    <button class="action-btn" data-direction="left">⬅️ Izquierda</button>
+                    <button class="action-btn" data-direction="center">⬆️ Centro</button>
+                    <button class="action-btn" data-direction="right">➡️ Derecha</button>
+                </div>
+                <div id="choiceDisplay" class="choice-display"></div>
+            </div>
+
+            <div class="round-info">
+                <p>Ronda <span id="currentRound">1</span> de 5</p>
+                <p id="roundResult"></p>
+            </div>
+        </div>
+
+        <!-- Pantalla de resultados -->
+        <div id="resultScreen" class="screen">
+            <h2>🏆 Resultado Final</h2>
+            <div class="final-score">
+                <div class="player-result">
+                    <h3>Tú</h3>
+                    <span id="finalPlayerScore">0</span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="opponent-result">
+                    <h3>Oponente</h3>
+                    <span id="finalOpponentScore">0</span>
+                </div>
+            </div>
+            <div id="winnerMessage" class="winner-message"></div>
+            <button id="playAgainBtn" class="btn-primary">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <!-- Indicador de tipo de conexión -->
+    <div class="version-info">
+        <span>Conexión:</span>
+        <span id="connectionType" class="connection-type none">Inicializando...</span>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="game-relay.js"></script>
+    
+    <script>
+        // Actualizar indicador de conexión
+        const originalShowConnectionStatus = PenaltyGameRelay.prototype.showConnectionStatus;
+        PenaltyGameRelay.prototype.showConnectionStatus = function(message, type) {
+            originalShowConnectionStatus.call(this, message, type);
+            
+            const connectionTypeElement = document.getElementById('connectionType');
+            if (connectionTypeElement) {
+                if (this.connectionType === 'p2p') {
+                    connectionTypeElement.textContent = 'P2P Directo';
+                    connectionTypeElement.className = 'connection-type p2p';
+                } else if (this.connectionType === 'relay') {
+                    connectionTypeElement.textContent = 'Servidor Relay';
+                    connectionTypeElement.className = 'connection-type relay';
+                } else {
+                    connectionTypeElement.textContent = 'Inicializando...';
+                    connectionTypeElement.className = 'connection-type none';
+                }
+            }
+        };
+    </script>
+</body>
+</html> 

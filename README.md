@@ -110,16 +110,22 @@ Este es el error más común. **Soluciones rápidas:**
 
 ### 🧪 Herramientas de Testing
 
-### Archivos de prueba incluidos:
-- **`test-p2p.html`**: Prueba específica de conexiones P2P con logs detallados
-- **`demo-local.html`**: Demo offline vs IA (siempre funciona)
-- **`test-local.html`**: Verifica compatibilidad del navegador
+### Archivos disponibles:
+- **`index.html`**: Versión P2P pura (puede fallar en algunas redes)
+- **`index-relay.html`**: ⭐ **VERSIÓN HÍBRIDA** (recomendada - siempre funciona)
+- **`demo-local.html`**: Demo offline vs IA (pruebas rápidas)
+- **`test-p2p.html`**: Diagnóstico de conexiones P2P
 
-### Cómo usar el test P2P:
-1. Abre `test-p2p.html` en GitHub Pages
-2. Haz clic en "Inicializar P2P"
-3. Si funciona: el juego principal funcionará
-4. Si falla: revisa los logs para identificar el problema
+### 🏆 Versión recomendada:
+**Usa `index-relay.html`** - Sistema híbrido que:
+1. Intenta P2P primero (más rápido)
+2. Si falla, usa servidor relay automáticamente
+3. **Garantiza que siempre funcione**
+
+### Cómo probar:
+1. Abre `index-relay.html` en GitHub Pages
+2. Observa el indicador de conexión (esquina inferior)
+3. ¡Funciona sin importar tu tipo de red!
 
 ## 📞 Más ayuda
 Ver [INSTRUCTIONS.md](INSTRUCTIONS.md) para troubleshooting detallado
