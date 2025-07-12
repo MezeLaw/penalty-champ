@@ -81,18 +81,33 @@ npx http-server
 
 ## 🐛 Solución de problemas
 
-### No puedo conectarme con mi oponente
-- Verifica que ambos tengan buena conexión a internet
-- Algunos firewalls corporativos pueden bloquear WebRTC
-- Intenta desde una red diferente
+### ❌ Error: "Could not connect to peer"
+Este es el error más común. **Soluciones rápidas:**
 
-### El juego se ve mal en móvil
-- Asegúrate de usar un navegador moderno
-- Rota el dispositivo a orientación vertical
+1. **Ambos jugadores**: Recarguen la página completamente
+2. **Crear nueva partida**: Genera un código diferente
+3. **Cambiar navegador**: Prueba Chrome, Firefox o Safari
+4. **Red diferente**: Intenta desde móvil, casa o trabajo
 
-### La conexión se pierde durante el juego
-- Revisa tu conexión a internet
-- Haz clic en "Jugar de Nuevo" para reiniciar
+### 🌐 Problemas de conexión P2P
+- **Firewall/NAT**: Algunos routers bloquean P2P
+- **Redes corporativas**: Suelen bloquear estas conexiones
+- **VPN/Proxy**: Desactiva temporalmente
+- **Antivirus**: Puede interferir con WebRTC
+
+### 🔧 Pasos para conexión exitosa
+1. **Jugador 1**: Crear partida → Esperar código
+2. **Jugador 2**: Unirse → Escribir código exacto
+3. **Esperar**: Hasta 10 segundos para conectar
+4. **Si falla**: Usar botón "Reintentar Conexión"
+
+### 🎯 Alternativas si no funciona
+- **Demo local**: Abre `demo-local.html` (juega vs IA)
+- **Servidor local**: `python -m http.server 8000`
+- **Modo incógnito**: Elimina conflictos de extensiones
+
+### 📞 Más ayuda
+Ver [INSTRUCTIONS.md](INSTRUCTIONS.md) para troubleshooting detallado
 
 ## 🤝 Contribuciones
 
